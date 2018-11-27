@@ -37,3 +37,12 @@ class Harel:
     def session_id(self, value):
         self.session = requests.Session()
         self.session.cookies = cookiejar_from_dict({AUTH_COOKIE_NAME: value})
+
+    def download_file(self, url, filename):
+        r = self.session.get(url, stream=True)
+        if r.status_code != 200:
+            return False
+        with open(filename, 'wb') as f:
+            for chunk in r:
+                f.write(chunk)
+        return True
