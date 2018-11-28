@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs
+
 import requests
 
 from bs4 import BeautifulSoup
@@ -9,6 +11,9 @@ AUTH_URL = ('https://www.harel-group.co.il/_vti_bin/webapi/'
 AUTH_CONFIRM_URL = ('https://www.harel-group.co.il/_vti_bin/webapi/'
                     'CustomersAuthentication/PostAuthenticate/ValidateOTP')
 AUTH_COOKIE_NAME = 'ASP.NET_SessionId'
+
+GET_APPLICATION_URL = ('https://www.harel-group.co.il/_vti_bin/webapi/'
+                       'Application/GetApplication/')
 
 
 class Harel:
@@ -46,3 +51,10 @@ class Harel:
             for chunk in r:
                 f.write(chunk)
         return True
+
+    def get_ticket(self):
+        r = self.session.post(GET_APPLICATION_URL, {
+            "selectedApp": "client-view",
+        })
+        app_url = r.json()['returnObject']['AppUrl']
+        return parse_qs(app_url)['ticket'][0]
