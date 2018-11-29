@@ -1,3 +1,5 @@
+import time
+import uuid
 from urllib.parse import parse_qs
 
 import requests
@@ -15,8 +17,17 @@ AUTH_COOKIE_NAME = 'ASP.NET_SessionId'
 GET_APPLICATION_URL = ('https://www.harel-group.co.il/_vti_bin/webapi/'
                        'Application/GetApplication/')
 
+CLIENT_VIEW_URL = ('https://apps.harel-group.co.il/apps.client-view/'
+                   'client-view/')
+
+CUSTOMER_PRODUCTS_URL = ('https://apps.harel-group.co.il/apps.client-view/'
+                         'client-view/customer-products')
+
 
 class Harel:
+    def get_current_time(self):
+        return int(time.time()*1000)
+
     def authenticate(self, user_id, phone):
         self.session = requests.Session()
         r = self.session.post(AUTH_URL, data={
@@ -58,3 +69,22 @@ class Harel:
         })
         app_url = r.json()['returnObject']['AppUrl']
         return parse_qs(app_url)['ticket'][0]
+
+    def request_client_view(self, ticket):
+        r = self.session.get(CLIENT_VIEW_URL, params={
+            'h': '0',
+            'i': '1',
+            'd': '1',
+            'applicationID': 'client-view',
+            'flowGuid': str(uuid.uuid4()),
+            'RedirectUrl': '/',
+            'ticket': ticket,
+        })
+        return r.status_code == 200
+
+    def get_policies(self, ticket):
+        r = self.session.get(CUSTOMER_PRODUCTS_URL, params={
+            'ctime': self.get_current_time(),
+            'ticket': ticket,
+        })
+        return r.json()['topicsList']
