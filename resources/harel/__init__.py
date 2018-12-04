@@ -1,6 +1,7 @@
 import time
 import uuid
 from urllib.parse import parse_qs
+from urllib.parse import urljoin
 
 import requests
 
@@ -8,10 +9,14 @@ from bs4 import BeautifulSoup
 from requests.utils import cookiejar_from_dict
 
 
+SITE_URL = 'https://www.harel-group.co.il/'
+
 AUTH_URL = ('https://www.harel-group.co.il/_vti_bin/webapi/'
             'CustomersAuthentication/PostAuthenticate/ValidateUser')
+
 AUTH_CONFIRM_URL = ('https://www.harel-group.co.il/_vti_bin/webapi/'
                     'CustomersAuthentication/PostAuthenticate/ValidateOTP')
+
 AUTH_COOKIE_NAME = 'ASP.NET_SessionId'
 
 GET_APPLICATION_URL = ('https://www.harel-group.co.il/_vti_bin/webapi/'
@@ -22,6 +27,11 @@ CLIENT_VIEW_URL = ('https://apps.harel-group.co.il/apps.client-view/'
 
 CUSTOMER_PRODUCTS_URL = ('https://apps.harel-group.co.il/apps.client-view/'
                          'client-view/customer-products')
+
+HTTP_PROXY_URL = ('https://www.harel-group.co.il/_layouts/15/HarelWebSite/'
+                  'HarelReports/ApplicationPages/HTTP_Proxy_Script.aspx')
+
+TIME_BETWEEN_QSID_AND_SID = 5000
 
 
 class Harel:
@@ -65,7 +75,7 @@ class Harel:
 
     def get_ticket(self):
         r = self.session.post(GET_APPLICATION_URL, {
-            "selectedApp": "client-view",
+            'selectedApp': 'client-view',
         })
         app_url = r.json()['returnObject']['AppUrl']
         return parse_qs(app_url)['ticket'][0]
@@ -87,4 +97,38 @@ class Harel:
             'ctime': self.get_current_time(),
             'ticket': ticket,
         })
-        return r.json()['topicsList']
+        policies = []
+        for l in r.json()['topicsList'].values():
+            policies += l
+        return policies
+
+    def get_report_id(self, policy):
+        url = urljoin(SITE_URL, policy['url'])
+        r = self.session.get(url)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        el = soup.find('div', class_='portal-body').div
+        report_id = el['data-reportid'].strip('!')
+        return report_id
+
+    def get_dashboard_metadata(self, report_id, filter_params):
+        current_time = self.get_current_time()
+        r = self.session.get(HTTP_PROXY_URL, params={
+            'Action': 'GetDashboardMetaData',
+            'UID': report_id,
+            'FilterParams': filter_params,
+            'Sid': current_time,
+            'QSID': current_time - TIME_BETWEEN_QSID_AND_SID,
+        })
+        r.raise_for_status()
+        return r.text
+
+    def download_policy_documents(self):
+        ticket = self.get_ticket()
+        self.request_client_view(ticket)
+        policies = self.get_policies(ticket)
+        for policy in policies:
+            report_id = self.get_report_id(policy)
+            filter_params = 'policySubjectId|{}'.format(
+                policy['policySubjectId']
+            )
+            metadata = self.get_dashboard_metadata(report_id, filter_params)
