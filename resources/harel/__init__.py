@@ -1,3 +1,4 @@
+import datetime
 import time
 import uuid
 from urllib.parse import parse_qs
@@ -121,6 +122,46 @@ class Harel:
         })
         r.raise_for_status()
         return r.text
+
+    def get_policy_document_xml(self, metadata):
+        metadata_soup = BeautifulSoup(metadata, 'lxml-xml')
+        export_soup = BeautifulSoup('<App/>', 'lxml-xml')
+
+        dashboard = metadata_soup.Dashboard
+
+        export_soup.App['Name'] = dashboard.get('ReportName') or 'Dashboard'
+
+        containers = dashboard.select('Layouts > Layout > Region > Container')
+
+        dashboard_items = export_soup.new_tag('DashboardItems')
+
+        for container in containers:
+            if container.get('DisplayAsPopup'):
+                continue
+
+            cells = container.find_all('Cell', recursive=False)
+
+            for cell in cells:
+                module_id = cell.get('ModuleId')
+
+                if not module_id:
+                    continue
+
+                dashboard_item = dashboard.find('DashboardItem', Id=module_id)
+
+                if not dashboard_item:
+                    continue
+
+                if dashboard_item.find('PublishSettings', DisablePublish='1'):
+                    continue
+
+                dashboard_items.append(dashboard_item)
+
+        export_soup.App.append(dashboard_items)
+        export_soup.App.append(metadata_soup.find('DataCache'))
+        export_soup.App.append(dashboard.DashboardDataSources)
+        export_soup.App['ColorTheme'] = dashboard['ColorTheme']
+        export_soup.App['Date'] = datetime.date.today().strftime('%d/%m/%Y')
 
     def download_policy_documents(self):
         ticket = self.get_ticket()
