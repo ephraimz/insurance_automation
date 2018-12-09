@@ -1,7 +1,9 @@
 import datetime
+import re
 import time
 import uuid
 from urllib.parse import parse_qs
+from urllib.parse import urlencode
 from urllib.parse import urljoin
 
 import requests
@@ -32,7 +34,20 @@ CUSTOMER_PRODUCTS_URL = ('https://apps.harel-group.co.il/apps.client-view/'
 HTTP_PROXY_URL = ('https://www.harel-group.co.il/_layouts/15/HarelWebSite/'
                   'HarelReports/ApplicationPages/HTTP_Proxy_Script.aspx')
 
+MY_POLICY_PDF_URL = ('https://www.harel-group.co.il/personal-info/my-harel/'
+                     'Pages/personal-info/my-policy-pdf.aspx')
+
+CREATE_POLICY_PDF_URL_1 = ('https://apps.harel-group.co.il/CreatePolicyPDF/'
+                         'jsp/createPdf')
+
+CREATE_POLICY_PDF_URL_2 = ('https://apps.harel-group.co.il/CreatePolicyPDF/'
+                           'jsp/PolicyPDF.jsp')
+
+SHOW_PDF_URL = 'https://www.hrl.co.il/showpdf/jsp/showpdf'
+
 TIME_BETWEEN_QSID_AND_SID = 5000
+
+ticket_re = re.compile(r'ticket=(\w+)')
 
 
 class Harel:
@@ -173,3 +188,22 @@ class Harel:
                 policy['policySubjectId']
             )
             metadata = self.get_dashboard_metadata(report_id, filter_params)
+
+    def download_copy_policy_document(self, policy_id):
+        referer = '{}?{}'.format(MY_POLICY_PDF_URL, urlencode(
+            {'POLICY_ID': policy_id}
+        ))
+        r = self.session.post(GET_APPLICATION_URL, data={
+            'selectedApp': 'my-policy-pdf',
+            'ContainerId': 'application_container_{}'.format(uuid.uuid4()),
+        }, headers={'Referer': referer})
+        app_url = r.json()['returnObject']['AppUrl']
+        ticket = parse_qs(app_url)['ticket'][0]
+        r = self.session.post(CREATE_POLICY_PDF_URL_1, data={
+            'ticket': ticket,
+        })
+        r = self.session.get(CREATE_POLICY_PDF_URL_2)
+        ticket = ticket_re.search(r.text).group(1)
+        url = '{}?{}'.format(SHOW_PDF_URL, urlencode({'ticket': ticket}))
+        filename = '{}.pdf'.format(policy_id)
+        self.download_file(url, filename)
