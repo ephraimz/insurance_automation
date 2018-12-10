@@ -207,3 +207,13 @@ class Harel:
         url = '{}?{}'.format(SHOW_PDF_URL, urlencode({'ticket': ticket}))
         filename = '{}.pdf'.format(policy_id)
         self.download_file(url, filename)
+
+    def download_copy_policy_documents(self):
+        ticket = self.get_ticket()
+        self.request_client_view(ticket)
+        policies = self.get_policies(ticket)
+        for policy in policies:
+            policy_id = policy['policySubjectId']
+            if not policy_id or policy_id == '0':
+                continue
+            self.download_copy_policy_document(policy_id)
