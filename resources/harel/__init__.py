@@ -47,7 +47,15 @@ SHOW_PDF_URL = 'https://www.hrl.co.il/showpdf/jsp/showpdf'
 
 DIMUT_WEB_DOCS_LOGIN_URL = 'https://www.hrl.co.il/DimutWebDocs/jsp/login.jsp'
 
+DIMUT_WEB_DOCUMENTS_URL = ('https://www.hrl.co.il/DimutWebDocs/jsp/'
+                           'docListTable.jsp')
+
+DIMUT_WEB_SHOW_FILE_URL = ('https://www.hrl.co.il/DimutWebDocs/jsp/'
+                           'showFile')
+
 TIME_BETWEEN_QSID_AND_SID = 5000
+
+MAX_PERIODIC_REPORTS_DOCUMENTS_TO_DOWNLOAD = 4
 
 ticket_re = re.compile(r'ticket=(\w+)')
 
@@ -240,3 +248,23 @@ class Harel:
             'session_id': session_id,
             'csrf_token': csrf_token,
         }
+
+    def download_periodic_reports(self):
+        params = self.get_periodic_reports_params()
+        r = self.session.post(DIMUT_WEB_DOCUMENTS_URL, data={
+            'sessionid': params['session_id'],
+            'csrfkey': params['csrf_token'],
+        })
+        documents_count = len(r.json()['data']['lines'])
+        documents_to_download = min(
+            MAX_PERIODIC_REPORTS_DOCUMENTS_TO_DOWNLOAD,
+            documents_count,
+        )
+        for i in range(documents_to_download):
+            url = '{}?docId={}&csrfkey={}'.format(
+                DIMUT_WEB_SHOW_FILE_URL,
+                i,
+                params['csrf_token'],
+            )
+            filename = '{}.pdf'.format(i)
+            self.download_file(url, filename)
