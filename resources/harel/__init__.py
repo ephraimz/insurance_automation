@@ -45,9 +45,14 @@ CREATE_POLICY_PDF_URL_2 = ('https://apps.harel-group.co.il/CreatePolicyPDF/'
 
 SHOW_PDF_URL = 'https://www.hrl.co.il/showpdf/jsp/showpdf'
 
+DIMUT_WEB_DOCS_LOGIN_URL = 'https://www.hrl.co.il/DimutWebDocs/jsp/login.jsp'
+
 TIME_BETWEEN_QSID_AND_SID = 5000
 
 ticket_re = re.compile(r'ticket=(\w+)')
+
+periodic_reports_session_id_re = re.compile(r'sessionid=\'([\w.]+)\'')
+periodic_reports_csrf_token_re = re.compile(r'csrftoken = \'(\w+)\'')
 
 
 class Harel:
@@ -89,9 +94,9 @@ class Harel:
                 f.write(chunk)
         return True
 
-    def get_ticket(self):
+    def get_ticket(self, selected_app):
         r = self.session.post(GET_APPLICATION_URL, {
-            'selectedApp': 'client-view',
+            'selectedApp': selected_app,
         })
         app_url = r.json()['returnObject']['AppUrl']
         return parse_qs(app_url)['ticket'][0]
@@ -179,7 +184,7 @@ class Harel:
         export_soup.App['Date'] = datetime.date.today().strftime('%d/%m/%Y')
 
     def download_policy_documents(self):
-        ticket = self.get_ticket()
+        ticket = self.get_ticket(selected_app='client-view')
         self.request_client_view(ticket)
         policies = self.get_policies(ticket)
         for policy in policies:
@@ -209,7 +214,7 @@ class Harel:
         self.download_file(url, filename)
 
     def download_copy_policy_documents(self):
-        ticket = self.get_ticket()
+        ticket = self.get_ticket(selected_app='client-view')
         self.request_client_view(ticket)
         policies = self.get_policies(ticket)
         for policy in policies:
@@ -217,3 +222,21 @@ class Harel:
             if not policy_id or policy_id == '0':
                 continue
             self.download_copy_policy_document(policy_id)
+
+    def get_periodic_reports_params(self):
+        ticket = self.get_ticket(selected_app='quarter-reports')
+        r = self.session.get(DIMUT_WEB_DOCS_LOGIN_URL, params={
+            'h': '0',
+            'i': '1',
+            'd': '1',
+            'applicationID': 'quarter-reports',
+            'flowGuid': str(uuid.uuid4()),
+            'RedirectUrl': '/',
+            'ticket': ticket,
+        })
+        session_id = periodic_reports_session_id_re.search(r.text).group(1)
+        csrf_token = periodic_reports_csrf_token_re.search(r.text).group(1)
+        return {
+            'session_id': session_id,
+            'csrf_token': csrf_token,
+        }
