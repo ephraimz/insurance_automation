@@ -5,6 +5,7 @@ import uuid
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
 from urllib.parse import urljoin
+from zipfile import ZipFile
 
 import requests
 
@@ -93,13 +94,11 @@ class Harel:
         self.session = requests.Session()
         self.session.cookies = cookiejar_from_dict({AUTH_COOKIE_NAME: value})
 
-    def download_file(self, url, filename):
-        r = self.session.get(url, stream=True)
+    def add_file_to_zipfile(self, zipfile, url, filename):
+        r = self.session.get(url)
         if r.status_code != 200:
             return False
-        with open(filename, 'wb') as f:
-            for chunk in r:
-                f.write(chunk)
+        zipfile.writestr(filename, r.content)
         return True
 
     def get_ticket(self, selected_app):
@@ -202,7 +201,7 @@ class Harel:
             )
             metadata = self.get_dashboard_metadata(report_id, filter_params)
 
-    def download_copy_policy_document(self, policy_id):
+    def download_copy_policy_document(self, zipfile, policy_id):
         referer = '{}?{}'.format(MY_POLICY_PDF_URL, urlencode(
             {'POLICY_ID': policy_id}
         ))
@@ -218,10 +217,10 @@ class Harel:
         r = self.session.get(CREATE_POLICY_PDF_URL_2)
         ticket = ticket_re.search(r.text).group(1)
         url = '{}?{}'.format(SHOW_PDF_URL, urlencode({'ticket': ticket}))
-        filename = '{}.pdf'.format(policy_id)
-        self.download_file(url, filename)
+        filename = 'copy_policy/{}.pdf'.format(policy_id)
+        self.add_file_to_zipfile(zipfile, url, filename)
 
-    def download_copy_policy_documents(self):
+    def download_copy_policy_documents(self, zipfile):
         ticket = self.get_ticket(selected_app='client-view')
         self.request_client_view(ticket)
         policies = self.get_policies(ticket)
@@ -229,7 +228,7 @@ class Harel:
             policy_id = policy['policySubjectId']
             if not policy_id or policy_id == '0':
                 continue
-            self.download_copy_policy_document(policy_id)
+            self.download_copy_policy_document(zipfile, policy_id)
 
     def get_periodic_reports_params(self):
         ticket = self.get_ticket(selected_app='quarter-reports')
@@ -249,7 +248,7 @@ class Harel:
             'csrf_token': csrf_token,
         }
 
-    def download_periodic_reports(self):
+    def download_periodic_reports(self, zipfile):
         params = self.get_periodic_reports_params()
         r = self.session.post(DIMUT_WEB_DOCUMENTS_URL, data={
             'sessionid': params['session_id'],
@@ -266,5 +265,11 @@ class Harel:
                 i,
                 params['csrf_token'],
             )
-            filename = '{}.pdf'.format(i)
-            self.download_file(url, filename)
+            filename = 'periodic_reports/{}.pdf'.format(i)
+            self.add_file_to_zipfile(zipfile, url, filename)
+
+    def download_all(self):
+        zipfile = ZipFile('documents.zip', 'w')
+        self.download_copy_policy_documents(zipfile)
+        self.download_periodic_reports(zipfile)
+        zipfile.close()
