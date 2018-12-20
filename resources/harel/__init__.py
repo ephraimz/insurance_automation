@@ -46,6 +46,10 @@ CREATE_POLICY_PDF_URL_2 = ('https://apps.harel-group.co.il/CreatePolicyPDF/'
 
 SHOW_PDF_URL = 'https://www.hrl.co.il/showpdf/jsp/showpdf'
 
+TIME_BETWEEN_QSID_AND_SID = 5000
+
+COPY_POLICY_TOPIC_IDS = (10,)
+
 DIMUT_WEB_DOCS_LOGIN_URL = 'https://www.hrl.co.il/DimutWebDocs/jsp/login.jsp'
 
 DIMUT_WEB_DOCUMENTS_URL = ('https://www.hrl.co.il/DimutWebDocs/jsp/'
@@ -54,7 +58,6 @@ DIMUT_WEB_DOCUMENTS_URL = ('https://www.hrl.co.il/DimutWebDocs/jsp/'
 DIMUT_WEB_SHOW_FILE_URL = ('https://www.hrl.co.il/DimutWebDocs/jsp/'
                            'showFile')
 
-TIME_BETWEEN_QSID_AND_SID = 5000
 
 MAX_PERIODIC_REPORTS_DOCUMENTS_TO_DOWNLOAD = 4
 
@@ -224,11 +227,16 @@ class Harel:
         ticket = self.get_ticket(selected_app='client-view')
         self.request_client_view(ticket)
         policies = self.get_policies(ticket)
+        policy_ids = []
         for policy in policies:
+            if policy['topicId'] not in COPY_POLICY_TOPIC_IDS:
+                continue
             policy_id = policy['policySubjectId']
             if not policy_id or policy_id == '0':
                 continue
-            self.download_copy_policy_document(zipfile, policy_id)
+            if policy_id not in policy_ids:
+                policy_ids.append(policy_id)
+                self.download_copy_policy_document(zipfile, policy_id)
 
     def get_periodic_reports_params(self):
         ticket = self.get_ticket(selected_app='quarter-reports')
