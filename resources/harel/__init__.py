@@ -46,6 +46,10 @@ CREATE_POLICY_PDF_URL_2 = ('https://apps.harel-group.co.il/CreatePolicyPDF/'
 
 SHOW_PDF_URL = 'https://www.hrl.co.il/showpdf/jsp/showpdf'
 
+HEALTH_GO_TO_POLICY_DOCUMENT_URL = ('https://apps.harel-group.co.il/'
+                                    'apps.customer-health-info/api/'
+                                    'go-to-policy-document/')
+
 TIME_BETWEEN_QSID_AND_SID = 5000
 
 COPY_POLICY_TOPIC_IDS = (10,)
@@ -204,7 +208,8 @@ class Harel:
             )
             metadata = self.get_dashboard_metadata(report_id, filter_params)
 
-    def download_copy_policy_document(self, zipfile, policy_id):
+    def download_copy_policy_document_10(self, zipfile, policy):
+        policy_id = policy['policySubjectId']
         referer = '{}?{}'.format(MY_POLICY_PDF_URL, urlencode(
             {'POLICY_ID': policy_id}
         ))
@@ -223,20 +228,37 @@ class Harel:
         filename = 'copy_policy/{}.pdf'.format(policy_id)
         self.add_file_to_zipfile(zipfile, url, filename)
 
+    def download_copy_policy_document_30(self, zipfile, policy):
+        ticket = self.get_ticket('lobby_health')
+        r = self.session.get(HEALTH_GO_TO_POLICY_DOCUMENT_URL, params={
+            ticket: ticket,
+            policyNumber: policy['policySubjectId'],
+            topicId: policy['topicId'],
+            ctime: self.get_current_time(),
+        })
+
     def download_copy_policy_documents(self, zipfile):
         ticket = self.get_ticket(selected_app='client-view')
         self.request_client_view(ticket)
         policies = self.get_policies(ticket)
+
         policy_ids = []
+
         for policy in policies:
-            if policy['topicId'] not in COPY_POLICY_TOPIC_IDS:
+            topic_id = policy['topicId']
+
+            if topic_id not in COPY_POLICY_TOPIC_IDS:
                 continue
+
             policy_id = policy['policySubjectId']
-            if not policy_id or policy_id == '0':
+
+            if not policy_id or policy_id == '0' or policy_id in policy_ids:
                 continue
-            if policy_id not in policy_ids:
-                policy_ids.append(policy_id)
-                self.download_copy_policy_document(zipfile, policy_id)
+
+            policy_ids.append(policy_id)
+
+            method_name = 'download_copy_policy_document_{}'.format(topic_id)
+            getattr(self, method_name)(zipfile, policy)
 
     def get_periodic_reports_params(self):
         ticket = self.get_ticket(selected_app='quarter-reports')
