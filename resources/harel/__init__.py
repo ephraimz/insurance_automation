@@ -231,10 +231,10 @@ class Harel:
     def download_copy_policy_document_30(self, zipfile, policy):
         ticket = self.get_ticket('lobby_health')
         r = self.session.get(HEALTH_GO_TO_POLICY_DOCUMENT_URL, params={
-            ticket: ticket,
-            policyNumber: policy['policySubjectId'],
-            topicId: policy['topicId'],
-            ctime: self.get_current_time(),
+            'ticket': ticket,
+            'policyNumber': policy['policySubjectId'],
+            'topicId': policy['topicId'],
+            'ctime': self.get_current_time(),
         })
 
     def download_copy_policy_documents(self, zipfile):
