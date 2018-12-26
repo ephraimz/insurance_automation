@@ -50,9 +50,15 @@ HEALTH_GO_TO_POLICY_DOCUMENT_URL = ('https://apps.harel-group.co.il/'
                                     'apps.customer-health-info/api/'
                                     'go-to-policy-document/')
 
+HEALTH_POLICIES_URL = ('https://apps.harel-group.co.il/'
+                       'apps.customer-health-info/api/policies')
+
+GET_POLICY_DOCUMENT_URL = ('https://apps.harel-group.co.il/'
+                           'apps.policy-document/api/get-policy-document')
+
 TIME_BETWEEN_QSID_AND_SID = 5000
 
-COPY_POLICY_TOPIC_IDS = (10,)
+COPY_POLICY_TOPIC_IDS = (10, 30)
 
 DIMUT_WEB_DOCS_LOGIN_URL = 'https://www.hrl.co.il/DimutWebDocs/jsp/login.jsp'
 
@@ -229,13 +235,30 @@ class Harel:
         self.add_file_to_zipfile(zipfile, url, filename)
 
     def download_copy_policy_document_30(self, zipfile, policy):
+        policy_id = policy['policySubjectId']
+        topic_id = policy['topicId']
         ticket = self.get_ticket('lobby_health')
-        r = self.session.get(HEALTH_GO_TO_POLICY_DOCUMENT_URL, params={
+        r = self.session.get(HEALTH_POLICIES_URL, params={
             'ticket': ticket,
-            'policyNumber': policy['policySubjectId'],
-            'topicId': policy['topicId'],
             'ctime': self.get_current_time(),
         })
+        r = self.session.get(HEALTH_GO_TO_POLICY_DOCUMENT_URL, params={
+            'ticket': ticket,
+            'policyNumber': policy_id,
+            'topicId': topic_id,
+            'ctime': self.get_current_time(),
+        })
+        ticket = r.text
+        url = '{}?{}'.format(
+            GET_POLICY_DOCUMENT_URL,
+            urlencode({
+                'ticket': ticket,
+                'ctime': self.get_current_time()
+            }),
+        )
+        filename = 'copy_policy/{}.pdf'.format(policy_id)
+        r = self.session.get(url)
+        self.add_file_to_zipfile(zipfile, url, filename)
 
     def download_copy_policy_documents(self, zipfile):
         ticket = self.get_ticket(selected_app='client-view')
