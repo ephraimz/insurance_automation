@@ -57,7 +57,7 @@ GET_POLICY_DOCUMENT_URL = ('https://apps.harel-group.co.il/'
 
 TIME_BETWEEN_QSID_AND_SID = 5000
 
-COPY_POLICY_TOPIC_IDS = (10, 30)
+COPY_POLICY_TOPIC_IDS = (10, 30, 99)
 
 DIMUT_WEB_DOCS_LOGIN_URL = 'https://www.hrl.co.il/DimutWebDocs/jsp/login.jsp'
 
@@ -150,8 +150,7 @@ class Harel:
         report_id = el['data-reportid'].strip('!')
         return report_id
 
-    def download_copy_policy_document_10(self, zipfile, policy):
-        policy_id = policy['policySubjectId']
+    def get_my_policy_pdf_url(self, policy_id):
         referer = '{}?{}'.format(MY_POLICY_PDF_URL, urlencode(
             {'POLICY_ID': policy_id}
         ))
@@ -167,6 +166,11 @@ class Harel:
         r = self.session.get(CREATE_POLICY_PDF_URL_2)
         ticket = ticket_re.search(r.text).group(1)
         url = '{}?{}'.format(SHOW_PDF_URL, urlencode({'ticket': ticket}))
+        return url
+
+    def download_copy_policy_document_10(self, zipfile, policy):
+        policy_id = policy['policySubjectId']
+        url = self.get_my_policy_pdf_url(policy_id)
         filename = 'copy_policy/{}.pdf'.format(policy_id)
         self.add_file_to_zipfile(zipfile, url, filename)
 
@@ -196,6 +200,29 @@ class Harel:
         r = self.session.get(url)
         self.add_file_to_zipfile(zipfile, url, filename)
 
+    def download_copy_policy_document_99(self, zipfile, policy):
+        if policy['xtopicId'] != 20:
+            return
+        report_id = self.get_report_id(policy)
+        current_time = self.get_current_time()
+        r = self.session.post(HTTP_PROXY_URL, params={
+            'Action': 'ExecSQL',
+            'Sid': current_time,
+            'QSID': current_time - TIME_BETWEEN_QSID_AND_SID,
+        }, data=(
+            '<Query KEY="622" R="{report_id}" D="1" DataSource="52">'
+            '<Parameters>'
+            '<Parameter U="HCUN" V="-999"/>'
+            '<Parameter U="_REPORTID" V="{report_id}"/>'
+            '</Parameters>'
+            '</Query>'
+        ).format(report_id=report_id))
+        soup = BeautifulSoup(r.text, 'lxml-xml')
+        policy_id = soup.Row['POLISA']
+        url = self.get_my_policy_pdf_url(policy_id)
+        filename = 'copy_policy/{}.pdf'.format(policy_id)
+        self.add_file_to_zipfile(zipfile, url, filename)
+
     def download_copy_policy_documents(self, zipfile):
         ticket = self.get_ticket(selected_app='client-view')
         self.request_client_view(ticket)
@@ -211,10 +238,12 @@ class Harel:
 
             policy_id = policy['policySubjectId']
 
-            if not policy_id or policy_id == '0' or policy_id in policy_ids:
+            # policySubjectId is None for mortgage (99),
+            # but we check for repeats for other policies
+            if policy_id and policy_id in policy_ids:
                 continue
-
-            policy_ids.append(policy_id)
+            else:
+                policy_ids.append(policy_id)
 
             method_name = 'download_copy_policy_document_{}'.format(topic_id)
             getattr(self, method_name)(zipfile, policy)
