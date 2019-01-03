@@ -1,4 +1,3 @@
-import datetime
 import re
 import time
 import uuid
@@ -150,69 +149,6 @@ class Harel:
         el = soup.find('div', class_='portal-body').div
         report_id = el['data-reportid'].strip('!')
         return report_id
-
-    def get_dashboard_metadata(self, report_id, filter_params):
-        current_time = self.get_current_time()
-        r = self.session.get(HTTP_PROXY_URL, params={
-            'Action': 'GetDashboardMetaData',
-            'UID': report_id,
-            'FilterParams': filter_params,
-            'Sid': current_time,
-            'QSID': current_time - TIME_BETWEEN_QSID_AND_SID,
-        })
-        r.raise_for_status()
-        return r.text
-
-    def get_policy_document_xml(self, metadata):
-        metadata_soup = BeautifulSoup(metadata, 'lxml-xml')
-        export_soup = BeautifulSoup('<App/>', 'lxml-xml')
-
-        dashboard = metadata_soup.Dashboard
-
-        export_soup.App['Name'] = dashboard.get('ReportName') or 'Dashboard'
-
-        containers = dashboard.select('Layouts > Layout > Region > Container')
-
-        dashboard_items = export_soup.new_tag('DashboardItems')
-
-        for container in containers:
-            if container.get('DisplayAsPopup'):
-                continue
-
-            cells = container.find_all('Cell', recursive=False)
-
-            for cell in cells:
-                module_id = cell.get('ModuleId')
-
-                if not module_id:
-                    continue
-
-                dashboard_item = dashboard.find('DashboardItem', Id=module_id)
-
-                if not dashboard_item:
-                    continue
-
-                if dashboard_item.find('PublishSettings', DisablePublish='1'):
-                    continue
-
-                dashboard_items.append(dashboard_item)
-
-        export_soup.App.append(dashboard_items)
-        export_soup.App.append(metadata_soup.find('DataCache'))
-        export_soup.App.append(dashboard.DashboardDataSources)
-        export_soup.App['ColorTheme'] = dashboard['ColorTheme']
-        export_soup.App['Date'] = datetime.date.today().strftime('%d/%m/%Y')
-
-    def download_policy_documents(self):
-        ticket = self.get_ticket(selected_app='client-view')
-        self.request_client_view(ticket)
-        policies = self.get_policies(ticket)
-        for policy in policies:
-            report_id = self.get_report_id(policy)
-            filter_params = 'policySubjectId|{}'.format(
-                policy['policySubjectId']
-            )
-            metadata = self.get_dashboard_metadata(report_id, filter_params)
 
     def download_copy_policy_document_10(self, zipfile, policy):
         policy_id = policy['policySubjectId']
