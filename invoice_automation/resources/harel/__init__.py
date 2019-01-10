@@ -94,6 +94,11 @@ class Harel:
         if response_data['Status'] == 0:
             return {'logged_in': True}
 
+        user_input_error = deep_get(response_data, 'Details.UserInputError')
+
+        if user_input_error:
+            return {'logged_in': False, 'error': user_input_error}
+
         process_error = deep_get(response_data, 'Details.ProcessError')
 
         return {'logged_in': False, 'error': process_error}
