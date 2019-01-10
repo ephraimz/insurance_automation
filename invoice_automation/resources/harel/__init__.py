@@ -11,6 +11,8 @@ import requests
 from bs4 import BeautifulSoup
 from requests.utils import cookiejar_from_dict
 
+from invoice_automation.common.utils import deep_get
+
 
 SITE_URL = 'https://www.harel-group.co.il/'
 
