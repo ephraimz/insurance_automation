@@ -84,13 +84,19 @@ class Harel:
 
     def authenticate(self, user_id, phone):
         self.session = requests.Session()
+
         r = self.session.post(AUTH_URL, data={
             'UserId': user_id,
             'FullPhone': phone,
         })
         response_data = r.json()
+
+        if response_data['Status'] == 0:
+            return {'logged_in': True}
+
         process_error = deep_get(response_data, 'Details.ProcessError')
-        return response_data['Status'] == 0
+
+        return {'logged_in': False, 'error': process_error}
 
     def confirm_authentication(self, code):
         r = self.session.post(AUTH_CONFIRM_URL, data={
