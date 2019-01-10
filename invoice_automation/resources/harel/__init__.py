@@ -89,6 +89,7 @@ class Harel:
             'FullPhone': phone,
         })
         response_data = r.json()
+        process_error = deep_get(response_data, 'Details.ProcessError')
         return response_data['Status'] == 0
 
     def confirm_authentication(self, code):
