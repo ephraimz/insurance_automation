@@ -69,7 +69,6 @@ DIMUT_WEB_DOCUMENTS_URL = ('https://www.hrl.co.il/DimutWebDocs/jsp/'
 DIMUT_WEB_SHOW_FILE_URL = ('https://www.hrl.co.il/DimutWebDocs/jsp/'
                            'showFile')
 
-
 MAX_PERIODIC_REPORTS_DOCUMENTS_TO_DOWNLOAD = 4
 
 ticket_re = re.compile(r'ticket=(\w+)')
