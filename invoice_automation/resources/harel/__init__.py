@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from requests.utils import cookiejar_from_dict
 
 from invoice_automation.common.utils import deep_get
+from invoice_automation.resources import InvoiceAutomationResource
 
 
 SITE_URL = 'https://www.harel-group.co.il/'
@@ -77,7 +78,7 @@ periodic_reports_session_id_re = re.compile(r'sessionid=\'([\w.]+)\'')
 periodic_reports_csrf_token_re = re.compile(r'csrftoken = \'(\w+)\'')
 
 
-class Harel:
+class Harel(InvoiceAutomationResource):
     def get_current_time(self):
         return int(time.time()*1000)
 
@@ -118,13 +119,6 @@ class Harel:
     def session_id(self, value):
         self.session = requests.Session()
         self.session.cookies = cookiejar_from_dict({AUTH_COOKIE_NAME: value})
-
-    def add_file_to_zipfile(self, zipfile, url, filename):
-        r = self.session.get(url)
-        if r.status_code != 200:
-            return False
-        zipfile.writestr(filename, r.content)
-        return True
 
     def get_ticket(self, selected_app):
         r = self.session.post(GET_APPLICATION_URL, {

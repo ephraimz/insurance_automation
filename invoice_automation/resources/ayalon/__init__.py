@@ -1,6 +1,10 @@
+import re
+
 import requests
 
 from bs4 import BeautifulSoup
+
+from invoice_automation.resources import InvoiceAutomationResource
 
 
 AUTH_URL = ('https://clientportfolio.ayalon-ins.co.il/'
@@ -9,8 +13,22 @@ AUTH_URL = ('https://clientportfolio.ayalon-ins.co.il/'
 AUTH_CONFIRM_URL = ('https://clientportfolio.ayalon-ins.co.il/'
                     'ClientPortfolio/Account/VerifyPhoneNumber')
 
+DOCUMENTS_CONTAINER_COMPONENT_URL = (
+    'https://clientportfolio.ayalon-ins.co.il/'
+    'ClientPortfolio/documentsContainerComponent'
+)
 
-class Ayalon:
+ALL_DOCUMENTS_URL = ('https://clientportfolio.ayalon-ins.co.il/'
+                    'ClientPortfolioService/api/allDocuments')
+
+DOCUMENT_DOWNLOAD_URL = ('https://clientportfolio.ayalon-ins.co.il/'
+                         'ClientPortfolioService/api/downloadFile/')
+
+documents_token_re = re.compile(r'token = "([a-zA-Z0-9_-]+)"')
+document_guid_re = re.compile(r'{([0-9A-Z-]+)}')
+
+
+class Ayalon(InvoiceAutomationResource):
     def get_request_verification_token(self, response):
         soup = BeautifulSoup(response.text, 'html.parser')
         token = soup.find('input', attrs={
@@ -55,3 +73,25 @@ class Ayalon:
             'button': 'validate',
         }, allow_redirects=False)
         return r.status_code == 302
+
+    def get_filename(self, document):
+        return '{}/{} {} {}.pdf'.format(
+            document['DirectoryDesc'],
+            document['DocDate'].replace('/', '.'),
+            document['DocName'],
+            document_guid_re.match(document['DocGuid']).group(1),
+        )
+
+    def download_documents(self, zipfile):
+        r = self.session.get(DOCUMENTS_CONTAINER_COMPONENT_URL)
+
+        token = documents_token_re.search(r.text).group(1)
+
+        headers = {'Authorization': 'Bearer {}'.format(token)}
+
+        r = self.session.get(ALL_DOCUMENTS_URL, headers=headers)
+
+        for document in r.json()['Data']:
+            url = ''.join([DOCUMENT_DOWNLOAD_URL, document['DownloadGuid']])
+            filename = self.get_filename(document)
+            self.add_file_to_zipfile(zipfile, url, filename)
