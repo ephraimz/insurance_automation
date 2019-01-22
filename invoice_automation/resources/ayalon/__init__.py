@@ -22,7 +22,7 @@ ALL_DOCUMENTS_URL = ('https://clientportfolio.ayalon-ins.co.il/'
                     'ClientPortfolioService/api/allDocuments')
 
 DOCUMENT_DOWNLOAD_URL = ('https://clientportfolio.ayalon-ins.co.il/'
-                         'ClientPortfolioService/api/downloadFile/')
+                         'ClientPortfolioService/api/downloadFile/documents/')
 
 documents_token_re = re.compile(r'token = "([a-zA-Z0-9_-]+)"')
 document_guid_re = re.compile(r'{([0-9A-Z-]+)}')
