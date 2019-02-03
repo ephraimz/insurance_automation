@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from requests.utils import cookiejar_from_dict
 
 from invoice_automation.common.utils import deep_get
-from invoice_automation.resources import InvoiceAutomationResource
+from ..base import InvoiceAutomationResource
 
 
 SITE_URL = 'https://www.harel-group.co.il/'

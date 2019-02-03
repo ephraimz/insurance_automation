@@ -4,7 +4,7 @@ import requests
 
 from bs4 import BeautifulSoup
 
-from invoice_automation.resources import InvoiceAutomationResource
+from ..base import InvoiceAutomationResource
 
 
 AUTH_URL = ('https://clientportfolio.ayalon-ins.co.il/'

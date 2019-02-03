@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from user_agent import generate_user_agent
 
 from invoice_automation.common.utils import deep_get
-from invoice_automation.resources import InvoiceAutomationResource
+from ..base import InvoiceAutomationResource
 
 
 AUTH_URL = (
