@@ -1,5 +1,7 @@
 import re
 
+from urllib.parse import urljoin
+
 import requests
 
 from bs4 import BeautifulSoup
@@ -17,6 +19,35 @@ AUTH_URL = (
 AUTH_CONFIRM_URL = (
     'https://www.555.co.il/webapp/api/client/OTPLogin/'
     'isTempPasswordOk'
+)
+
+PERSONAL_AREA_URL = (
+    'https://www.555.co.il/site/online/personalArea.html'
+)
+
+HOMEPAGE_URL = (
+    'https://www.555.co.il/site/online/HomePage.html'
+)
+
+DOCUMENTS_LIST_URL = (
+    'https://www.555.co.il/site/online/HomePage.html?'
+    'wicket:interface=privateClientZone:1:viewPanel:'
+    'wtk-internal-border:ClientZoneHeader:linkContainer:'
+    'documents::ILinkListener::'
+)
+
+document_re = re.compile(
+    'DocumentsForClient\.html\?wicket:interface=privateClientZone:'
+    '\d+:viewPanel:selectDocTypePanel:selectDocTypePanel:inner:'
+    'sentLettersPanel:documentsListContainer:documentsList:\d+:'
+    'inner:nameLink::IBehaviorListener:0:'
+)
+
+document_download_re = re.compile(
+    'DocumentsForClient\.html\?wicket:interface=privateClientZone:'
+    '\d+:plugins:items:\d+:item:dialogs:items:\d+:item:item:item:'
+    'singleDocPanel:embeddedImage:docViewerForm:downloadLink::'
+    'ILinkListener::'
 )
 
 
@@ -55,3 +86,30 @@ class BituachYashir(InvoiceAutomationResource):
         key = deep_get(r.json(), 'data.message.key')
 
         return key == 'login.success'
+
+    def request_personal_area(self):
+        r = self.session.get(PERSONAL_AREA_URL)
+        return r.url.startswith(HOMEPAGE_URL)
+
+    def get_documents_list(self):
+        r = self.session.get(DOCUMENTS_LIST_URL)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        tbody = soup.find('div', class_='documentsList').tbody
+        documents = []
+        for tr in tbody.find_all('tr'):
+            m = document_re.search(tr.a['onclick'])
+            if m:
+                url = m.group(0)
+                name = tr.a.span.string
+                documents.append({
+                    'url': url,
+                    'name': name,
+                })
+        return documents
+
+    def download_document(self, zipfile, document):
+        r = self.session.get(urljoin(HOMEPAGE_URL, document['url']))
+        download_url = document_download_re.search(r.text).group(0)
+        url = urljoin(HOMEPAGE_URL, download_url)
+        filename = '{}.pdf'.format(document['name'])
+        self.add_file_to_zipfile(zipfile, url, filename)
