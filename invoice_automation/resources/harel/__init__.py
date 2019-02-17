@@ -70,8 +70,6 @@ DIMUT_WEB_DOCUMENTS_URL = ('https://www.hrl.co.il/DimutWebDocs/jsp/'
 DIMUT_WEB_SHOW_FILE_URL = ('https://www.hrl.co.il/DimutWebDocs/jsp/'
                            'showFile')
 
-MAX_PERIODIC_REPORTS_DOCUMENTS_TO_DOWNLOAD = 4
-
 ticket_re = re.compile(r'ticket=(\w+)')
 
 periodic_reports_session_id_re = re.compile(r'sessionid=\'([\w.]+)\'')
@@ -273,28 +271,31 @@ class Harel(InvoiceAutomationResource):
             'csrf_token': csrf_token,
         }
 
-    def download_periodic_reports(self, zipfile):
-        params = self.get_periodic_reports_params()
+    def get_latest_periodic_report(self, params):
         r = self.session.post(DIMUT_WEB_DOCUMENTS_URL, data={
             'sessionid': params['session_id'],
             'csrfkey': params['csrf_token'],
         })
-        documents_count = len(r.json()['data']['lines'])
-        documents_to_download = min(
-            MAX_PERIODIC_REPORTS_DOCUMENTS_TO_DOWNLOAD,
-            documents_count,
+        lines = r.json()['data']['lines']
+        for line in lines:
+            if line['dd4'] == 'דוחות תקופתיים':
+                return line
+
+    def download_periodic_report(self, zipfile):
+        params = self.get_periodic_reports_params()
+
+        line = self.get_latest_periodic_report(params)
+
+        url = '{}?docId={}&csrfkey={}'.format(
+            DIMUT_WEB_SHOW_FILE_URL,
+            line['id'],
+            params['csrf_token'],
         )
-        for i in range(documents_to_download):
-            url = '{}?docId={}&csrfkey={}'.format(
-                DIMUT_WEB_SHOW_FILE_URL,
-                i,
-                params['csrf_token'],
-            )
-            filename = 'periodic_reports/{}.pdf'.format(i)
-            self.add_file_to_zipfile(zipfile, url, filename)
+        filename = '{}.pdf'.format(line['dd3'])
+        self.add_file_to_zipfile(zipfile, url, filename)
 
     def download_all(self):
         zipfile = ZipFile('documents.zip', 'w')
         self.download_copy_policy_documents(zipfile)
-        self.download_periodic_reports(zipfile)
+        self.download_periodic_report(zipfile)
         zipfile.close()
