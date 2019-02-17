@@ -243,9 +243,7 @@ class Harel(InvoiceAutomationResource):
 
             policy_id = policy['policySubjectId']
 
-            # policySubjectId is None for mortgage (99),
-            # but we check for repeats for other policies
-            if policy_id and policy_id in policy_ids:
+            if policy_id in policy_ids:
                 continue
             else:
                 policy_ids.append(policy_id)
