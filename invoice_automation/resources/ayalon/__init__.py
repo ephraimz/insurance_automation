@@ -74,13 +74,29 @@ class Ayalon(InvoiceAutomationResource):
         }, allow_redirects=False)
         return r.status_code == 302
 
+    def get_document_download_url(self, document):
+        return ''.join([
+            DOCUMENT_DOWNLOAD_URL,
+            document['DownloadGuid'],
+        ])
+
     def get_filename(self, document):
-        return '{}/{} {} {}.pdf'.format(
-            document['DirectoryDesc'],
+        return '{} {} {}.pdf'.format(
             document['DocDate'].replace('/', '.'),
-            document['DocName'],
+            document['DocName'].replace('/', '.'),
             document_guid_re.match(document['DocGuid']).group(1),
         )
+
+    def get_latest_periodic_report(self, documents):
+        for document in documents:
+            if document['DocName'] == 'דוח תקופתי למבוטח':
+                return document
+
+    def download_periodic_report(self, zipfile, documents):
+        document = self.get_latest_periodic_report(documents)
+        url = self.get_document_download_url(document)
+        filename = self.get_filename(document)
+        self.add_file_to_zipfile(zipfile, url, filename)
 
     def download_documents(self, zipfile):
         r = self.session.get(DOCUMENTS_CONTAINER_COMPONENT_URL)
@@ -91,7 +107,6 @@ class Ayalon(InvoiceAutomationResource):
 
         r = self.session.get(ALL_DOCUMENTS_URL, headers=headers)
 
-        for document in r.json()['Data']:
-            url = ''.join([DOCUMENT_DOWNLOAD_URL, document['DownloadGuid']])
-            filename = self.get_filename(document)
-            self.add_file_to_zipfile(zipfile, url, filename)
+        documents = r.json()['Data']
+
+        self.download_periodic_report(zipfile, documents)
