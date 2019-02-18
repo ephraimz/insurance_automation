@@ -94,9 +94,37 @@ class Ayalon(InvoiceAutomationResource):
 
     def download_periodic_report(self, zipfile, documents):
         document = self.get_latest_periodic_report(documents)
+
+        if not document:
+            return False
+
         url = self.get_document_download_url(document)
         filename = self.get_filename(document)
         self.add_file_to_zipfile(zipfile, url, filename)
+
+        return True
+
+    def get_policies(self, documents):
+        return [
+            document for document
+            in documents
+            if document['DirectoryDesc'] == 'פוליסות'
+        ]
+
+    def download_policies(self, zipfile, documents):
+        documents = self.get_policies(documents)
+
+        if not documents:
+            return False
+
+        for document in documents:
+            url = self.get_document_download_url(document)
+            filename = 'פוליסות/{}'.format(
+                self.get_filename(document)
+            )
+            self.add_file_to_zipfile(zipfile, url, filename)
+
+        return True
 
     def download_documents(self, zipfile):
         r = self.session.get(DOCUMENTS_CONTAINER_COMPONENT_URL)
@@ -110,3 +138,4 @@ class Ayalon(InvoiceAutomationResource):
         documents = r.json()['Data']
 
         self.download_periodic_report(zipfile, documents)
+        self.download_policies(zipfile, documents)
