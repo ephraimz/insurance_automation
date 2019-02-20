@@ -269,31 +269,69 @@ class Harel(InvoiceAutomationResource):
             'csrf_token': csrf_token,
         }
 
-    def get_latest_periodic_report(self, params):
+    def is_quarterly_report(self, line):
+        return (
+            line['dd4'] == 'דוחות תקופתיים'
+            and 'רבעון' in line['dd3']
+        )
+
+    def is_annual_report(self, line):
+        return (
+            line['dd4'] == 'דוחות תקופתיים'
+            and 'שנתי' in line['dd3']
+        )
+
+    def is_annual_short_report(self, line):
+        return (
+            line['dd4'] == 'דוח תקופתי מקוצר'
+            and 'שנתי' in line['dd3']
+        )
+
+    def is_report(self, line, types):
+        for name, func in types.items():
+            if func(line):
+                return name
+
+    def get_periodic_reports(self, params):
         r = self.session.post(DIMUT_WEB_DOCUMENTS_URL, data={
             'sessionid': params['session_id'],
             'csrfkey': params['csrf_token'],
         })
         lines = r.json()['data']['lines']
+        report_types = {
+            'quarterly': self.is_quarterly_report,
+            'annual': self.is_annual_report,
+            'annual_short': self.is_annual_short_report,
+        }
+        found = []
         for line in lines:
-            if line['dd4'] == 'דוחות תקופתיים':
-                return line
+            report_type = self.is_report(line, report_types)
+            if report_type:
+                found.append(line)
+                del report_types[report_type]
+                if not report_types:
+                    break
+        return found
 
-    def download_periodic_report(self, zipfile):
+    def download_periodic_reports(self, zipfile):
         params = self.get_periodic_reports_params()
 
-        line = self.get_latest_periodic_report(params)
+        lines = self.get_periodic_reports(params)
 
-        url = '{}?docId={}&csrfkey={}'.format(
-            DIMUT_WEB_SHOW_FILE_URL,
-            line['id'],
-            params['csrf_token'],
-        )
-        filename = '{}.pdf'.format(line['dd3'])
-        self.add_file_to_zipfile(zipfile, url, filename)
+        for line in lines:
+            url = '{}?docId={}&csrfkey={}'.format(
+                DIMUT_WEB_SHOW_FILE_URL,
+                line['id'],
+                params['csrf_token'],
+            )
+            filename = 'periodic_reports/{} {}.pdf'.format(
+                line['dd4'],
+                line['dd3'],
+            )
+            self.add_file_to_zipfile(zipfile, url, filename)
 
     def download_all(self):
         zipfile = ZipFile('documents.zip', 'w')
         self.download_copy_policy_documents(zipfile)
-        self.download_periodic_report(zipfile)
+        self.download_periodic_reports(zipfile)
         zipfile.close()
