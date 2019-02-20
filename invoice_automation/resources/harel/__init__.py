@@ -13,6 +13,8 @@ from requests.utils import cookiejar_from_dict
 
 from invoice_automation.common.utils import deep_get
 from ..base import InvoiceAutomationResource
+from ..base.const import POLICIES_FOLDER_NAME
+from ..base.const import PERIODIC_REPORTS_FOLDER_NAME
 
 
 SITE_URL = 'https://www.harel-group.co.il/'
@@ -176,7 +178,7 @@ class Harel(InvoiceAutomationResource):
     def download_copy_policy_document_10(self, zipfile, policy):
         policy_id = policy['policySubjectId']
         url = self.get_my_policy_pdf_url(policy_id)
-        filename = 'copy_policy/{}.pdf'.format(policy_id)
+        filename = '{}/{}.pdf'.format(POLICIES_FOLDER_NAME, policy_id)
         self.add_file_to_zipfile(zipfile, url, filename)
 
     def download_copy_policy_document_30(self, zipfile, policy):
@@ -201,7 +203,7 @@ class Harel(InvoiceAutomationResource):
                 'ctime': self.get_current_time()
             }),
         )
-        filename = 'copy_policy/{}.pdf'.format(policy_id)
+        filename = '{}/{}.pdf'.format(POLICIES_FOLDER_NAME, policy_id)
         r = self.session.get(url)
         self.add_file_to_zipfile(zipfile, url, filename)
 
@@ -225,7 +227,7 @@ class Harel(InvoiceAutomationResource):
         soup = BeautifulSoup(r.text, 'lxml-xml')
         policy_id = soup.Row['POLISA']
         url = self.get_my_policy_pdf_url(policy_id)
-        filename = 'copy_policy/{}.pdf'.format(policy_id)
+        filename = '{}/{}.pdf'.format(POLICIES_FOLDER_NAME, policy_id)
         self.add_file_to_zipfile(zipfile, url, filename)
 
     def download_copy_policy_documents(self, zipfile):
@@ -324,7 +326,8 @@ class Harel(InvoiceAutomationResource):
                 line['id'],
                 params['csrf_token'],
             )
-            filename = 'periodic_reports/{} {}.pdf'.format(
+            filename = '{}/{} {}.pdf'.format(
+                PERIODIC_REPORTS_FOLDER_NAME,
                 line['dd4'],
                 line['dd3'],
             )
