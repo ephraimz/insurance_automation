@@ -9,7 +9,6 @@ from zipfile import ZipFile
 import requests
 
 from bs4 import BeautifulSoup
-from requests.utils import cookiejar_from_dict
 
 from invoice_automation.common.utils import deep_get
 from ..base import InvoiceAutomationResource
@@ -24,8 +23,6 @@ AUTH_URL = ('https://www.harel-group.co.il/_vti_bin/webapi/'
 
 AUTH_CONFIRM_URL = ('https://www.harel-group.co.il/_vti_bin/webapi/'
                     'CustomersAuthentication/PostAuthenticate/ValidateOTP')
-
-AUTH_COOKIE_NAME = 'ASP.NET_SessionId'
 
 GET_APPLICATION_URL = ('https://www.harel-group.co.il/_vti_bin/webapi/'
                        'Application/GetApplication/')
@@ -110,15 +107,6 @@ class Harel(InvoiceAutomationResource):
         })
         response_data = r.json()
         return response_data['Status'] == 0
-
-    @property
-    def session_id(self):
-        return self.session.cookies[AUTH_COOKIE_NAME]
-
-    @session_id.setter
-    def session_id(self, value):
-        self.session = requests.Session()
-        self.session.cookies = cookiejar_from_dict({AUTH_COOKIE_NAME: value})
 
     def get_ticket(self, selected_app):
         r = self.session.post(GET_APPLICATION_URL, {
