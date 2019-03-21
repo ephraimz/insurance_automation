@@ -4,7 +4,6 @@ import uuid
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
 from urllib.parse import urljoin
-from zipfile import ZipFile
 
 import requests
 
@@ -321,8 +320,6 @@ class Harel(InvoiceAutomationResource):
             )
             self.add_file_to_zipfile(zipfile, url, filename)
 
-    def download_all(self):
-        zipfile = ZipFile('documents.zip', 'w')
+    def download_all(self, zipfile):
         self.download_copy_policy_documents(zipfile)
         self.download_periodic_reports(zipfile)
-        zipfile.close()
