@@ -53,19 +53,22 @@ class Ayalon(InvoiceAutomationResource):
         soup = BeautifulSoup(r.text, 'html.parser')
 
         if soup.find(id='sadesismahadpeamit'):
-            return {
-                'logged_in': True,
+            self.data.update({
+                'user_id': user_id,
+                'phone': phone,
                 'token': self.get_request_verification_token(r),
-            }
+            })
+
+            return {'logged_in': True}
 
         return {'logged_in': False}
 
-    def confirm_authentication(self, token, user_id, phone, code):
+    def confirm_authentication(self, code):
         r = self.session.post(AUTH_CONFIRM_URL, data={
-            '__RequestVerificationToken': token,
-            'PhoneToValidate': phone,
+            '__RequestVerificationToken': self.data['token'],
+            'PhoneToValidate': self.data['phone'],
             'EmailToValidate': '',
-            'PassportId': user_id,
+            'PassportId': self.data['user_id'],
             'IsKosherPhone': False,
             'Action': '',
             'Code': code,

@@ -1,4 +1,7 @@
 class InvoiceAutomationResource:
+    def __init__(self):
+        self.data = {}
+
     def add_file_to_zipfile(self, zipfile, url, filename):
         r = self.session.get(url)
         if r.status_code != 200:
