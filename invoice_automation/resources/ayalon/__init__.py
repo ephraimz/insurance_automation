@@ -29,8 +29,7 @@ document_guid_re = re.compile(r'{([0-9A-Z-]+)}')
 
 
 class Ayalon(InvoiceAutomationResource):
-    def get_request_verification_token(self, response):
-        soup = BeautifulSoup(response.text, 'html.parser')
+    def get_request_verification_token(self, soup):
         token = soup.find('input', attrs={
             'name': '__RequestVerificationToken'
         })['value']
@@ -40,7 +39,8 @@ class Ayalon(InvoiceAutomationResource):
         self.session = requests.Session()
 
         r = self.session.get(AUTH_URL)
-        token = self.get_request_verification_token(r)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        token = self.get_request_verification_token(soup)
 
         r = self.session.post(AUTH_URL, data={
             '__RequestVerificationToken': token,
@@ -56,7 +56,7 @@ class Ayalon(InvoiceAutomationResource):
             self.data.update({
                 'user_id': user_id,
                 'phone': phone,
-                'token': self.get_request_verification_token(r),
+                'token': self.get_request_verification_token(soup),
             })
 
             return {'logged_in': True}
