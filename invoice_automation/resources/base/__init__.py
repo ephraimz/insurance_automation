@@ -2,6 +2,12 @@ class InvoiceAutomationResource:
     def __init__(self):
         self.data = {}
 
+    def get_request_verification_token(self, soup):
+        token = soup.find('input', attrs={
+            'name': '__RequestVerificationToken'
+        })['value']
+        return token
+
     def add_file_to_zipfile(self, zipfile, url, filename):
         r = self.session.get(url)
         if r.status_code != 200:

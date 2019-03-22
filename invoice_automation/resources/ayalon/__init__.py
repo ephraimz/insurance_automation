@@ -29,12 +29,6 @@ document_guid_re = re.compile(r'{([0-9A-Z-]+)}')
 
 
 class Ayalon(InvoiceAutomationResource):
-    def get_request_verification_token(self, soup):
-        token = soup.find('input', attrs={
-            'name': '__RequestVerificationToken'
-        })['value']
-        return token
-
     def authenticate(self, user_id, phone):
         self.session = requests.Session()
 
