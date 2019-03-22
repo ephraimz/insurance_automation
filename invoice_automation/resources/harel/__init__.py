@@ -1,5 +1,4 @@
 import re
-import time
 import uuid
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
@@ -75,9 +74,6 @@ periodic_reports_csrf_token_re = re.compile(r'csrftoken = \'(\w+)\'')
 
 
 class Harel(InvoiceAutomationResource):
-    def get_current_time(self):
-        return int(time.time()*1000)
-
     def authenticate(self, user_id, phone):
         self.session = requests.Session()
 
