@@ -8,3 +8,7 @@ def deep_get(dictionary, keys, default=None):
         keys.split("."),
         dictionary
     )
+
+
+def has_all_needed_keys(dictionary, keys):
+    return all(map(lambda x: x in dictionary, keys))
