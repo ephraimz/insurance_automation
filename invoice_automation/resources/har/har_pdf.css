@@ -1,0 +1,22 @@
+* {
+    direction: rtl;
+}
+
+@page {
+    size: A3;
+    margin: 1cm;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+table td,
+table th {
+    border: 1px solid #555;
+}
+
+table:nth-child(1) td,
+table:nth-child(1) th {
+    border: none;
+}
