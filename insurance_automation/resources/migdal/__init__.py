@@ -3,8 +3,8 @@ from urllib.parse import urlencode
 
 import requests
 
-from invoice_automation.common.utils import has_all_needed_keys
-from ..base import InvoiceAutomationResource
+from insurance_automation.common.utils import has_all_needed_keys
+from ..base import InsuranceAutomationResource
 
 
 
@@ -65,7 +65,7 @@ def is_relevant_report(report):
     return None
 
 
-class Migdal(InvoiceAutomationResource):
+class Migdal(InsuranceAutomationResource):
     def authenticate(self, user_id):
         self.session = requests.Session()
 

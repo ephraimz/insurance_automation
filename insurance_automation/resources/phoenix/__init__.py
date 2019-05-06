@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 import requests
 from bs4 import BeautifulSoup
 
-from ..base import InvoiceAutomationResource
+from ..base import InsuranceAutomationResource
 
 
 BASE_URL = 'https://myinfo.fnx.co.il'
@@ -28,7 +28,7 @@ POLICY_DOWNLOAD_RETRY_INTERVAL = 1.2
 EXCLUDED_REPORTS_TABS = ['דיוור כללי']
 
 
-class Phoenix(InvoiceAutomationResource):
+class Phoenix(InsuranceAutomationResource):
     def authenticate(self, user_id, phone):
         self.session = requests.Session()
 

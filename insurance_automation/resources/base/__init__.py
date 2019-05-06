@@ -1,7 +1,7 @@
 import time
 
 
-class InvoiceAutomationResource:
+class InsuranceAutomationResource:
     def __init__(self):
         self.data = {}
 

@@ -7,8 +7,8 @@ import requests
 from bs4 import BeautifulSoup
 from user_agent import generate_user_agent
 
-from invoice_automation.common.utils import deep_get
-from ..base import InvoiceAutomationResource
+from insurance_automation.common.utils import deep_get
+from ..base import InsuranceAutomationResource
 
 
 AUTH_URL = (
@@ -51,7 +51,7 @@ document_download_re = re.compile(
 )
 
 
-class BituachYashir(InvoiceAutomationResource):
+class BituachYashir(InsuranceAutomationResource):
     def authenticate(self, user_id, phone):
         self.session = requests.Session()
         self.session.headers['User-Agent'] = generate_user_agent(

@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 import requests
 from bs4 import BeautifulSoup
 
-from ..base import InvoiceAutomationResource
+from ..base import InsuranceAutomationResource
 from .utils import change_url
 
 BASE_URL = 'https://www.menoramivt.co.il'
@@ -12,7 +12,7 @@ BASE_URL = 'https://www.menoramivt.co.il'
 PORTAL_URL = BASE_URL + '/wps/portal/'
 
 
-class Menora(InvoiceAutomationResource):
+class Menora(InsuranceAutomationResource):
     def authenticate(self, user_id, phone):
         self.session = requests.Session()
 

@@ -8,8 +8,8 @@ import requests
 
 from bs4 import BeautifulSoup
 
-from invoice_automation.common.utils import deep_get
-from ..base import InvoiceAutomationResource
+from insurance_automation.common.utils import deep_get
+from ..base import InsuranceAutomationResource
 from ..base.const import POLICIES_FOLDER_NAME
 from ..base.const import PERIODIC_REPORTS_FOLDER_NAME
 
@@ -73,7 +73,7 @@ periodic_reports_session_id_re = re.compile(r'sessionid=\'([\w.]+)\'')
 periodic_reports_csrf_token_re = re.compile(r'csrftoken = \'(\w+)\'')
 
 
-class Harel(InvoiceAutomationResource):
+class Harel(InsuranceAutomationResource):
     def authenticate(self, user_id, phone):
         self.session = requests.Session()
 

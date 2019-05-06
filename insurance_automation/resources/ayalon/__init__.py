@@ -4,7 +4,7 @@ import requests
 
 from bs4 import BeautifulSoup
 
-from ..base import InvoiceAutomationResource
+from ..base import InsuranceAutomationResource
 
 
 AUTH_URL = ('https://clientportfolio.ayalon-ins.co.il/'
@@ -28,7 +28,7 @@ documents_token_re = re.compile(r'token = "([a-zA-Z0-9_-]+)"')
 document_guid_re = re.compile(r'{([0-9A-Z-]+)}')
 
 
-class Ayalon(InvoiceAutomationResource):
+class Ayalon(InsuranceAutomationResource):
     def authenticate(self, user_id, phone):
         self.session = requests.Session()
 

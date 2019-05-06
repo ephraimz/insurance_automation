@@ -7,7 +7,7 @@ import requests
 import weasyprint
 from bs4 import BeautifulSoup
 
-from ..base import InvoiceAutomationResource
+from ..base import InsuranceAutomationResource
 
 from .utils import get_har_soup
 
@@ -23,7 +23,7 @@ RESULTS_URL = ROOT_URL + '/Results'
 CSS_FILE_PATH = os.path.join(os.path.dirname(__file__), 'har_pdf.css')
 
 
-class Har(InvoiceAutomationResource):
+class Har(InsuranceAutomationResource):
     def get_captcha(self):
         self.session = requests.Session()
 
