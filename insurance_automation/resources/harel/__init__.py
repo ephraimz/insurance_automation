@@ -187,7 +187,6 @@ class Harel(InsuranceAutomationResource):
             }),
         )
         filename = '{}/{}.pdf'.format(POLICIES_FOLDER_NAME, policy_id)
-        r = self.session.get(url)
         self.add_file_to_zipfile(zipfile, url, filename)
 
     def download_copy_policy_document_99(self, zipfile, policy):
