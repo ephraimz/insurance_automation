@@ -83,7 +83,7 @@ class Har(InsuranceAutomationResource):
 
         return {'success': False, 'error': r.text}
 
-    def download_all(self, zipfile):
+    def download_all(self):
         self.session.get(RESULTS_URL, params={'id': '-1'})
 
         printer_response = self.session.get(PRINTER_URL)
@@ -95,5 +95,9 @@ class Har(InsuranceAutomationResource):
         weasyprint_css = weasyprint.CSS(filename=CSS_FILE_PATH)
         pdf = weasyprint_html.write_pdf(stylesheets=[weasyprint_css])
 
-        zipfile.writestr('har.pdf', pdf)
-        zipfile.writestr('har.xlsx', excel_response.content)
+        d = {}
+
+        d['har.pdf'] = pdf
+        d['har.xlsx'] = excel_response.content
+
+        return d

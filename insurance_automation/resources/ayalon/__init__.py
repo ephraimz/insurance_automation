@@ -89,7 +89,7 @@ class Ayalon(InsuranceAutomationResource):
             if document['DocName'] == 'דוח תקופתי למבוטח':
                 return document
 
-    def download_periodic_report(self, zipfile, documents):
+    def download_periodic_report(self, d, documents):
         document = self.get_latest_periodic_report(documents)
 
         if not document:
@@ -97,7 +97,7 @@ class Ayalon(InsuranceAutomationResource):
 
         url = self.get_document_download_url(document)
         filename = self.get_filename(document)
-        self.add_file_to_zipfile(zipfile, url, filename)
+        self.add_file_to_dict(d, url, filename)
 
         return True
 
@@ -108,7 +108,7 @@ class Ayalon(InsuranceAutomationResource):
             if document['DirectoryDesc'] == 'פוליסות'
         ]
 
-    def download_policies(self, zipfile, documents):
+    def download_policies(self, d, documents):
         documents = self.get_policies(documents)
 
         if not documents:
@@ -119,11 +119,11 @@ class Ayalon(InsuranceAutomationResource):
             filename = 'פוליסות/{}'.format(
                 self.get_filename(document)
             )
-            self.add_file_to_zipfile(zipfile, url, filename)
+            self.add_file_to_dict(d, url, filename)
 
         return True
 
-    def download_documents(self, zipfile):
+    def download_all(self):
         r = self.session.get(DOCUMENTS_CONTAINER_COMPONENT_URL)
 
         token = documents_token_re.search(r.text).group(1)
@@ -134,5 +134,9 @@ class Ayalon(InsuranceAutomationResource):
 
         documents = r.json()['Data']
 
-        self.download_periodic_report(zipfile, documents)
-        self.download_policies(zipfile, documents)
+        d = {}
+
+        self.download_periodic_report(d, documents)
+        self.download_policies(d, documents)
+
+        return d

@@ -158,13 +158,13 @@ class Harel(InsuranceAutomationResource):
         url = '{}?{}'.format(SHOW_PDF_URL, urlencode({'ticket': ticket}))
         return url
 
-    def download_copy_policy_document_10(self, zipfile, policy):
+    def download_copy_policy_document_10(self, d, policy):
         policy_id = policy['policySubjectId']
         url = self.get_my_policy_pdf_url(policy_id)
         filename = '{}/{}.pdf'.format(POLICIES_FOLDER_NAME, policy_id)
-        self.add_file_to_zipfile(zipfile, url, filename)
+        self.add_file_to_dict(d, url, filename)
 
-    def download_copy_policy_document_30(self, zipfile, policy):
+    def download_copy_policy_document_30(self, d, policy):
         policy_id = policy['policySubjectId']
         topic_id = policy['topicId']
         ticket = self.get_ticket('lobby_health')
@@ -187,9 +187,9 @@ class Harel(InsuranceAutomationResource):
             }),
         )
         filename = '{}/{}.pdf'.format(POLICIES_FOLDER_NAME, policy_id)
-        self.add_file_to_zipfile(zipfile, url, filename)
+        self.add_file_to_dict(d, url, filename)
 
-    def download_copy_policy_document_99(self, zipfile, policy):
+    def download_copy_policy_document_99(self, d, policy):
         if policy['xtopicId'] != 20:
             return
         report_id = self.get_report_id(policy)
@@ -210,9 +210,9 @@ class Harel(InsuranceAutomationResource):
         policy_id = soup.Row['POLISA']
         url = self.get_my_policy_pdf_url(policy_id)
         filename = '{}/{}.pdf'.format(POLICIES_FOLDER_NAME, policy_id)
-        self.add_file_to_zipfile(zipfile, url, filename)
+        self.add_file_to_dict(d, url, filename)
 
-    def download_copy_policy_documents(self, zipfile):
+    def download_copy_policy_documents(self, d):
         ticket = self.get_ticket(selected_app='client-view')
         self.request_client_view(ticket)
         policies = self.get_policies(ticket)
@@ -233,7 +233,7 @@ class Harel(InsuranceAutomationResource):
                 policy_ids.append(policy_id)
 
             method_name = 'download_copy_policy_document_{}'.format(topic_id)
-            getattr(self, method_name)(zipfile, policy)
+            getattr(self, method_name)(d, policy)
 
     def get_periodic_reports_params(self):
         ticket = self.get_ticket(selected_app='quarter-reports')
@@ -297,7 +297,7 @@ class Harel(InsuranceAutomationResource):
                     break
         return found
 
-    def download_periodic_reports(self, zipfile):
+    def download_periodic_reports(self, d):
         params = self.get_periodic_reports_params()
 
         lines = self.get_periodic_reports(params)
@@ -313,8 +313,10 @@ class Harel(InsuranceAutomationResource):
                 line['dd4'],
                 line['dd3'],
             )
-            self.add_file_to_zipfile(zipfile, url, filename)
+            self.add_file_to_dict(d, url, filename)
 
-    def download_all(self, zipfile):
-        self.download_copy_policy_documents(zipfile)
-        self.download_periodic_reports(zipfile)
+    def download_all(self):
+        d = {}
+        self.download_copy_policy_documents(d)
+        self.download_periodic_reports(d)
+        return d

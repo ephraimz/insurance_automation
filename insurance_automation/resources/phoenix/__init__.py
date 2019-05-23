@@ -117,7 +117,7 @@ class Phoenix(InsuranceAutomationResource):
 
         return policies
 
-    def download_copy_policy_document(self, zipfile, document_id, policy):
+    def download_copy_policy_document(self, d, document_id, policy):
         qs = urlencode({
             'docId': document_id,
             'serviceType': policy['serviceType'],
@@ -133,9 +133,9 @@ class Phoenix(InsuranceAutomationResource):
             policy['hebrew_type'],
             policy['policyId'],
         )
-        self.add_file_to_zipfile(zipfile, url, filename)
+        self.add_file_to_dict(d, url, filename)
 
-    def download_copy_policy_documents(self, zipfile):
+    def download_copy_policy_documents(self, d):
         r = self.session.get(HOME_PAGE_URL)
 
         soup = BeautifulSoup(r.content, 'html.parser')
@@ -185,18 +185,17 @@ class Phoenix(InsuranceAutomationResource):
 
                 if data['Success']:
                     self.download_copy_policy_document(
-                        zipfile,
+                        d,
                         data['DocumentId'],
                         policy,
                     )
 
         if skipped_policies:
-            zipfile.writestr(
-                'skipped_policies.txt',
-                '{}\n'.format('\n'.join(skipped_policies)),
+            d['skipped_policies.txt'] = b''.join(
+                '{}\n'.format(p).encode() for p in skipped_policies
             )
 
-    def download_periodic_reports(self, zipfile):
+    def download_periodic_reports(self, d):
         r = self.session.get(ARCHIVES_URL, allow_redirects=False)
 
         soup = BeautifulSoup(r.content, 'html.parser')
@@ -216,8 +215,10 @@ class Phoenix(InsuranceAutomationResource):
                     href = a.attrs['href']
                     url = BASE_URL+href
                     filename = 'דוחות/{}/{}.pdf'.format(text, a.text.strip())
-                    self.add_file_to_zipfile(zipfile, url, filename)
+                    self.add_file_to_dict(d, url, filename)
 
-    def download_all(self, zipfile):
-        self.download_copy_policy_documents(zipfile)
-        self.download_periodic_reports(zipfile)
+    def download_all(self):
+        d = {}
+        self.download_copy_policy_documents(d)
+        self.download_periodic_reports(d)
+        return d

@@ -149,7 +149,7 @@ class Migdal(InsuranceAutomationResource):
 
         return policies
 
-    def download_copy_policy_documents(self, zipfile):
+    def download_copy_policy_documents(self, d):
         policies = self.get_policies()
 
         relevant_documents = []
@@ -175,9 +175,9 @@ class Migdal(InsuranceAutomationResource):
                 relevant_document['PolicyNo'],
                 relevant_document['DocTypeName'],
             )
-            self.add_file_to_zipfile(zipfile, url, filename)
+            self.add_file_to_dict(d, url, filename)
 
-    def download_periodic_reports(self, zipfile):
+    def download_periodic_reports(self, d):
         response = self.session.get(
             REPORTS_HANDLER_URL,
             params={'action': '1'},
@@ -199,8 +199,10 @@ class Migdal(InsuranceAutomationResource):
                 report_dict['DocDate'].replace('/', '.'),
                 report_name,
             )
-            self.add_file_to_zipfile(zipfile, url, filename)
+            self.add_file_to_dict(d, url, filename)
 
-    def download_all(self, zipfile):
-        self.download_copy_policy_documents(zipfile)
-        self.download_periodic_reports(zipfile)
+    def download_all(self):
+        d = {}
+        self.download_copy_policy_documents(d)
+        self.download_periodic_reports(d)
+        return d

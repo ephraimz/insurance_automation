@@ -107,9 +107,9 @@ class BituachYashir(InsuranceAutomationResource):
                 })
         return documents
 
-    def download_document(self, zipfile, document):
+    def download_document(self, d, document):
         r = self.session.get(urljoin(HOMEPAGE_URL, document['url']))
         download_url = document_download_re.search(r.text).group(0)
         url = urljoin(HOMEPAGE_URL, download_url)
         filename = '{}.pdf'.format(document['name'])
-        self.add_file_to_zipfile(zipfile, url, filename)
+        self.add_file_to_dict(d, url, filename)

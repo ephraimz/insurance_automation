@@ -103,7 +103,7 @@ class Menora(InsuranceAutomationResource):
 
         return items
 
-    def download_periodic_reports(self, zipfile):
+    def download_periodic_reports(self, d):
         response = self.session.get(self.data['my_reports_url'])
 
         soup = BeautifulSoup(response.content, 'html.parser')
@@ -136,7 +136,9 @@ class Menora(InsuranceAutomationResource):
                 report['Name'],
                 report['id'],
             )
-            self.add_file_to_zipfile(zipfile, url, filename)
+            self.add_file_to_dict(d, url, filename)
 
-    def download_all(self, zipfile):
-        self.download_periodic_reports(zipfile)
+    def download_all(self):
+        d = {}
+        self.download_periodic_reports(d)
+        return d
