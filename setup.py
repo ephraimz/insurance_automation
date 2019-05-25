@@ -13,6 +13,9 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://ezsave.visualstudio.com/insurance_automation',
     packages=setuptools.find_packages(),
+    package_data={
+        '': ('*.css'),
+    },
     install_requires=[
         'beautifulsoup4==4.6.3',
         'lxml==4.2.5',
